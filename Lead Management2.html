@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lead Management Tool</title>
+
+<style>
+:root {
+  --primary: #2563eb;
+  --dark: #1f2937;
+  --light: #f9fafb;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: var(--light);
+  color: #111827;
+}
+
+/* HEADER */
+header {
+  background: var(--dark);
+  color: #fff;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+header button {
+  background: #ef4444;
+  border-radius: 6px;
+  padding: 8px 14px;
+}
+
+/* CONTAINER */
+.container {
+  padding: 16px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* CARD */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+/* FORM */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+input, select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+button {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* LOGIN */
+.login-box {
+  max-width: 400px;
+  margin: 80px auto;
+}
+
+/* TABLE */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  font-size: 14px;
+}
+
+th {
+  background: #f3f4f6;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: white;
+  font-size: 12px;
+}
+
+.yes { background: #16a34a; }
+.no { background: #dc2626; }
+
+/* ACTIONS */
+.actions button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  header h3 {
+    font-size: 16px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="login-box card">
+  <h3>Login</h3>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="hidden">
+<header>
+  <h3>Lead Management</h3>
+  <button onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+  <!-- FORM -->
+  <div class="card">
+    <h3>Add / Edit Lead</h3>
+    <input id="leadId" type="hidden">
+
+    <div class="form-grid">
+      <input id="itemName" placeholder="Item Name">
+      <input id="personName" placeholder="Interested Person">
+      <input id="contactNumber" placeholder="Contact Number">
+
+      <select id="demoScheduled">
+        <option value="Yes">Demo Scheduled - Yes</option>
+        <option value="No">Demo Scheduled - No</option>
+      </select>
+
+      <select id="demoDone">
+        <option value="Yes">Demo Done - Yes</option>
+        <option value="No">Demo Done - No</option>
+      </select>
+
+      <select id="purchased">
+        <option value="Yes">Purchased - Yes</option>
+        <option value="No">Purchased - No</option>
+      </select>
+    </div>
+
+    <button style="margin-top:12px" onclick="saveLead()">Save Lead</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card">
+    <h3>Leads</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Demo</th>
+            <th>Done</th>
+            <th>Purchased</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leadsTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const BIN_ID = "696f7999d0ea881f407838cc";
+const JSONBIN_API_KEY = "$2a$10$f3q74/wLdu/PTRyyIK/qD.KzH0nNADmxyQdokYkkfdpy7bWaJijFO";
+
+/* AUTH CHECK */
+if (localStorage.getItem("authUser")) showDashboard();
+
+/* LOGIN */
+async function login() {
+  const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+    headers: { "X-Master-Key": JSONBIN_API_KEY }
+  });
+  const data = await res.json();
+
+  const user = data.record.users.find(
+    u => u.username === username.value && u.password === password.value && u.active
+  );
+
+  if (!user) return alert("Invalid Login");
+
+  localStorage.setItem("authUser", JSON.stringify(user));
+  showDashboard();
+}
+
+function showDashboard() {
+  loginPage.classList.add("hidden");
+  dashboard.classList.remove("hidden");
+  loadLeads();
+}
+
+function logout() {
+  localStorage.clear();
+  location.reload();
+}
+
+/* LOAD LEADS */
+async function loadLeads() {
+  const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+    headers: { "X-Master-Key": JSONBIN_API_KEY }
+  });
+  const data = await res.json();
+  renderLeads(data.record.leads || []);
+}
+
+/* RENDER */
+function renderLeads(leads) {
+  leadsTable.innerHTML = "";
+  leads.forEach(l => {
+    leadsTable.innerHTML += `
+      <tr>
+        <td>${l.itemName}</td>
+        <td>${l.personName}</td>
+        <td>${l.contact}</td>
+        <td><span class="badge ${l.demoScheduled==="Yes"?"yes":"no"}">${l.demoScheduled}</span></td>
+        <td><span class="badge ${l.demoDone==="Yes"?"yes":"no"}">${l.demoDone}</span></td>
+        <td><span class="badge ${l.purchased==="Yes"?"yes":"no"}">${l.purchased}</span></td>
+        <td class="actions">
+          <button onclick='editLead(${JSON.stringify(l)})'>Edit</button>
+          <button onclick='deleteLead(${l.id})'>Delete</button>
+        </td>
+      </tr>`;
+  });
+}
+
+/* SAVE */
+async function saveLead() {
+  const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+    headers: { "X-Master-Key": JSONBIN_API_KEY }
+  });
+  const data = await res.json();
+
+  let leads = data.record.leads || [];
+  const users = data.record.users || [];
+
+  const id = leadId.value || Date.now();
+  leads = leads.filter(l => l.id != id);
+  leads.push({
+    id,
+    itemName: itemName.value,
+    personName: personName.value,
+    contact: contactNumber.value,
+    demoScheduled: demoScheduled.value,
+    demoDone: demoDone.value,
+    purchased: purchased.value
+  });
+
+  await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Master-Key": JSONBIN_API_KEY
+    },
+    body: JSON.stringify({ users, leads })
+  });
+
+  clearForm();
+  loadLeads();
+}
+
+function editLead(l) {
+  leadId.value = l.id;
+  itemName.value = l.itemName;
+  personName.value = l.personName;
+  contactNumber.value = l.contact;
+  demoScheduled.value = l.demoScheduled;
+  demoDone.value = l.demoDone;
+  purchased.value = l.purchased;
+}
+
+async function deleteLead(id) {
+  if (!confirm("Delete lead?")) return;
+
+  const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+    headers: { "X-Master-Key": JSONBIN_API_KEY }
+  });
+  const data = await res.json();
+
+  await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Master-Key": JSONBIN_API_KEY
+    },
+    body: JSON.stringify({
+      users: data.record.users,
+      leads: data.record.leads.filter(l => l.id !== id)
+    })
+  });
+
+  loadLeads();
+}
+
+function clearForm() {
+  leadId.value = "";
+  itemName.value = "";
+  personName.value = "";
+  contactNumber.value = "";
+}
+</script>
+
+</body>
+</html>
